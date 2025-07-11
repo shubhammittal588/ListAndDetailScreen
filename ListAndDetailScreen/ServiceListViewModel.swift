@@ -8,8 +8,10 @@
 import SwiftUI
 
 @available(iOS 16.0, *)
+
 struct ServiceListView: View {
     @StateObject private var viewModel = ServiceViewModel()
+    @State private var isKeyboardVisible = false
     
     var body: some View {
         NavigationStack {
@@ -35,13 +37,20 @@ struct ServiceListView: View {
                 .refreshable {
                     await viewModel.refreshServices()
                 }
-                .searchable(text: $viewModel.searchText, prompt: "Search services...")
                 
+                .searchable(text: $viewModel.searchText, prompt: "Search services...")
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                    isKeyboardVisible = false
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                    isKeyboardVisible = true
+                }
+
                 .overlay(alignment: .top) {
                     GeometryReader { proxy in
                         let minY = proxy.frame(in: .named("scroll")).minY
 
-                        if viewModel.searchText.isEmpty {
+                        if viewModel.searchText.isEmpty && !isKeyboardVisible {
                             Image(systemName: "mic.fill")
                                 .foregroundColor(.gray)// moves it to the right edge
                                 .padding(.leading , 350)
